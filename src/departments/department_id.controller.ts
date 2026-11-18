@@ -18,7 +18,7 @@ export class DepartmentsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post()
+  @Post(':id')
   async create(@Body() body: any) {
     return this.departmentsService.create(body);
   }
