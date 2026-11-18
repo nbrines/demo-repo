@@ -17,7 +17,12 @@ export class DepartmentsService {
       [position_code, position_name]
     );
     
-    return this.findById(result.insertId);
+    return {
+      success: true,
+      department_id: Number(result.insertId),
+      position_code,
+      position_name,
+    };
   }
 
   async findById(department_id: number) {
@@ -39,7 +44,6 @@ export class DepartmentsService {
   }
 
   async update(department_id: number, partial: Record<string, any>) {
-    // Explicitly filter to only valid columns to prevent Unknown column errors
     const position_code = partial.position_code || partial.code || partial.department_code;
     const position_name = partial.position_name || partial.name || partial.department_name;
 
@@ -55,12 +59,12 @@ export class DepartmentsService {
       values.push(position_name);
     }
 
-    if (fields.length === 0) return await this.findById(department_id);
+    if (fields.length === 0) return { success: true, department_id };
 
     values.push(department_id);
     const sql = `UPDATE departments SET ${fields.join(', ')} WHERE department_id = ?`;
     await this.pool().execute(sql, values);
-    return this.findById(department_id);
+    return { success: true, department_id, position_code, position_name };
   }
 
   async delete(department_id: number) {
