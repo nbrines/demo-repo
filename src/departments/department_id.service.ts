@@ -9,17 +9,15 @@ export class DepartmentsService {
   private pool = () => this.db.getPool();
 
   async create(createDto: any) {
-    // Extract and fallback gracefully to handle any payload key variations
-    const code = createDto.position_code || createDto.code;
-    const name = createDto.position_name || createDto.name;
+    const position_code = createDto.position_code || createDto.code || createDto.department_code;
+    const position_name = createDto.position_name || createDto.name || createDto.department_name;
 
-    // Use this.pool().execute with proper array destructuring for mysql2
     const [result] = await this.pool().execute<OkPacket>(
       'INSERT INTO departments (position_code, position_name) VALUES (?, ?)',
-      [code, name]
+      [position_code, position_name]
     );
     
-    return { success: true, insertId: result.insertId };
+    return this.findById(result.insertId);
   }
 
   async findById(department_id: number) {
@@ -41,15 +39,21 @@ export class DepartmentsService {
   }
 
   async update(department_id: number, partial: Record<string, any>) {
+    // Explicitly filter to only valid columns to prevent Unknown column errors
+    const position_code = partial.position_code || partial.code || partial.department_code;
+    const position_name = partial.position_name || partial.name || partial.department_name;
+
     const fields: string[] = [];
     const values: any[] = [];
 
-    Object.entries(partial).forEach(([key, value]) => {
-      if (value !== undefined) {
-        fields.push(`${key} = ?`);
-        values.push(value);
-      }
-    });
+    if (position_code !== undefined) {
+      fields.push('position_code = ?');
+      values.push(position_code);
+    }
+    if (position_name !== undefined) {
+      fields.push('position_name = ?');
+      values.push(position_name);
+    }
 
     if (fields.length === 0) return await this.findById(department_id);
 
