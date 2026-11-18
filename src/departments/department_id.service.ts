@@ -8,15 +8,18 @@ export class DepartmentsService {
 
   private pool = () => this.db.getPool();
 
-  async create(data: any) {
-    const fields = Object.keys(data);
-    const placeholders = fields.map(() => '?').join(', ');
-    const values: any[] = Object.values(data);
+  async create(createDto: any) {
+    // Extract and fallback gracefully to handle any payload key variations
+    const code = createDto.position_code || createDto.code;
+    const name = createDto.position_name || createDto.name;
 
-    const sql = `INSERT INTO departments (${fields.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await this.pool().execute<OkPacket>(sql, values);
-
-    return this.findById(result.insertId);
+    // Use this.pool().execute with proper array destructuring for mysql2
+    const [result] = await this.pool().execute<OkPacket>(
+      'INSERT INTO departments (position_code, position_name) VALUES (?, ?)',
+      [code, name]
+    );
+    
+    return { success: true, insertId: result.insertId };
   }
 
   async findById(department_id: number) {
