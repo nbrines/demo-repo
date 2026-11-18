@@ -9,19 +9,18 @@ export class DepartmentsService {
   private pool = () => this.db.getPool();
 
   async create(createDto: any) {
-    const position_code = createDto.position_code || createDto.code || createDto.department_code;
-    const position_name = createDto.position_name || createDto.name || createDto.department_name;
+    const dto = createDto || {};
+    const department_name = dto.department_name || dto.name || '';
 
     const [result] = await this.pool().execute<OkPacket>(
-      'INSERT INTO departments (position_code, position_name) VALUES (?, ?)',
-      [position_code, position_name]
+      'INSERT INTO departments (department_name) VALUES (?)',
+      [department_name]
     );
     
     return {
       success: true,
       department_id: Number(result.insertId),
-      position_code,
-      position_name,
+      department_name,
     };
   }
 
@@ -44,27 +43,16 @@ export class DepartmentsService {
   }
 
   async update(department_id: number, partial: Record<string, any>) {
-    const position_code = partial.position_code || partial.code || partial.department_code;
-    const position_name = partial.position_name || partial.name || partial.department_name;
+    const dto = partial || {};
+    const department_name = dto.department_name || dto.name;
 
-    const fields: string[] = [];
-    const values: any[] = [];
-
-    if (position_code !== undefined) {
-      fields.push('position_code = ?');
-      values.push(position_code);
+    if (department_name !== undefined) {
+      await this.pool().execute(
+        'UPDATE departments SET department_name = ? WHERE department_id = ?',
+        [department_name, department_id]
+      );
     }
-    if (position_name !== undefined) {
-      fields.push('position_name = ?');
-      values.push(position_name);
-    }
-
-    if (fields.length === 0) return { success: true, department_id };
-
-    values.push(department_id);
-    const sql = `UPDATE departments SET ${fields.join(', ')} WHERE department_id = ?`;
-    await this.pool().execute(sql, values);
-    return { success: true, department_id, position_code, position_name };
+    return this.findById(department_id);
   }
 
   async delete(department_id: number) {
