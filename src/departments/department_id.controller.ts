@@ -18,6 +18,7 @@ export class DepartmentsController {
     return this.departmentsService.findById(+id);
   }
 
+  @UseGuards(JwtAuthGuard) // <-- Added missing guard here
   @Post()
   async create(@Body() body: any) {
     return this.departmentsService.create(body);
